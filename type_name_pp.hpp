@@ -164,7 +164,7 @@ constexpr int32_t PFv_prefix = []{
 # if defined(__FUNCSIG__)
     - sizeof "0x0>(void)";
 # else
-    - sizeof "0x0]";
+    - sizeof "0]";
 # endif
 }();
 
