@@ -79,13 +79,13 @@ namespace impl {
 
 // charz<N>: wrapper for zero-terminated char array
 //
-template <std::size_t N>
+template <int32_t N>
 struct charz
 {
     char data[N];
 };
 
-template <std::size_t N>
+template <int32_t N>
 charz(char const(&)[N]) -> charz<N>;
 
 // subcharz<B,E>(char[N]) returns subarray [B,E) of char array arg.
@@ -93,7 +93,7 @@ charz(char const(&)[N]) -> charz<N>;
 // The [B,E) indices are signed integers (c.f. Python slice indexing).
 // The input char array argument is assumed to be zero terminated.
 //
-template <int32_t B = 0, int32_t E = INT32_MAX, std::size_t N>
+template <int32_t B = 0, int32_t E = INT32_MAX, int32_t N>
 constexpr
 auto
 subcharz(char const (&a)[N])
@@ -110,7 +110,7 @@ subcharz(char const (&a)[N])
     return chars;
 }
 
-template <int32_t B = 0, int32_t E = INT32_MAX, std::size_t N>
+template <int32_t B = 0, int32_t E = INT32_MAX, int32_t N>
 constexpr
 auto
 subcharz(charz<N> const& a) { return subcharz<B,E,N>(a.data); }
@@ -162,9 +162,9 @@ constexpr int32_t PFT_prefix = []{
 constexpr int32_t PFv_prefix = []{
   return PTvS<0>()
 # if defined(__FUNCSIG__)
-    - sizeof "0>(void)";
+    - sizeof "0x0>(void)";
 # else
-    - sizeof "0]";
+    - sizeof "0x0]";
 # endif
 }();
 
@@ -194,7 +194,7 @@ PTvI()
 # endif
 }
 
-template <std::size_t N>
+template <int32_t N>
 constexpr
 int32_t
 last_qualifier_pos(const char (&a)[N])
