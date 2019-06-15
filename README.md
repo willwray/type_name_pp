@@ -89,5 +89,5 @@ Outputs `char const [1][2][3]` or `const char[1][2][3]` (or something similar)
 
 | Linux Travis| Windows Appveyor|
 | :---: | :---: |
-|gcc-8, clang-7<br>-std=c++17|MSVC 15.9.4<br>/std:c++latest|
+|gcc-9, clang-7<br>-std=c++17|MSVC 19.22.27724 x86<br>/std:c++latest|
 | [![Build Status](https://travis-ci.org/willwray/type_name_pp.svg?branch=master)](https://travis-ci.org/willwray/type_name_pp) | [![Build status](https://ci.appveyor.com/api/projects/status/i77qtb1de21ew5su?svg=true)](https://ci.appveyor.com/project/willwray/type_name_pp) |
