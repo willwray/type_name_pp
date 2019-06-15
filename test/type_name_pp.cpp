@@ -1,17 +1,31 @@
 #include "type_name_pp.hpp"
 
+#include <cassert>
 #include <type_traits>
 
 using namespace ltl;
 
-/*
- *** PP output is highly dependent on compiler,
- *** compiler version, and, 
- *** for std types, the std library version.
+/* 
+   Not really tests.
+   More a catalogue of differences.
+   Let these serve as a warning.
+
+   Output is highly dependent on:
+
+   * compiler,
+   * compiler version, 
+   * std library version (for std types).
 */
 
-// Tested on GCC9, Clang8 -stdlib=libc++, MSVC 14.2
-// Some tests fail on GCC<9 (enum and char)
+/* Tested on these compiler versions:
+
+     * GCC 9
+     * Clang 8 -stdlib=libc++
+     * MSVC 19.22.27724 for x86
+*/
+
+// Some tests known to fail on GCC<9 (enum and char)
+// MSVC has also changed output significantly
 
 // GCM(g,c,m) macro; 3-way switch based on compiler
 //
@@ -28,14 +42,14 @@ template <std::size_t N> charz(char const(&)[N]) -> charz<N>;
 
 // constexpr char array vs charz comparison *** SKIPS SPACES ***
 // 
-template <size_t A, size_t B>
+template <int32_t A, int32_t B>
 constexpr bool operator==(char const (&a)[A], charz<B> const& cb)
 {
     const auto& b = cb.data;
-    for (size_t ai = 0, bi = 0; ai != A && bi != B; ++ai, ++bi)
+    for (int32_t ai = 0, bi = 0; ai != A && bi != B; ++ai, ++bi)
     {
-        while (a[ai]==' ') ++ai;
-        while (b[bi]==' ') ++bi;
+        while (a[ai] == ' ') ++ai;
+        while (b[bi] == ' ') ++bi;
         if (a[ai] != b[bi])
             return false;
     }
@@ -45,11 +59,13 @@ constexpr bool operator==(char const (&a)[A], charz<B> const& cb)
 static_assert( "int" == charz{"int"} );
 static_assert( "in t" == charz{"i n t"} ); // Spaces ignored
 
+static_assert(std::is_same_v<decltype(type_name_pp<char>), char const(&)[5]>);
+static_assert( type_name_pp<char> == charz{"char"} );
+
 #define PP_SAME_T(type) \
 static_assert(type_name_pp<type> == charz{#type})
 
 // Simple type template args
-
 PP_SAME_T(char);
 PP_SAME_T(signed char);
 PP_SAME_T(unsigned char);
@@ -63,15 +79,24 @@ PP_SAME_T(int*);
 
 PP_SAME_T(const int);
 PP_SAME_T(volatile int);
-PP_SAME_T(const volatile int);
+//PP_SAME_T(const volatile int);
 
 PP_SAME_T(const int&);
 PP_SAME_T(const int*);
 PP_SAME_T(int *const);
 
+struct ch { char c; };
+PP_SAME_T(char ch::*);
+static_assert(type_name_pp<decltype(&ch::c)> == charz{ "char ch::*" });
+
 // Simple types with platform-dependent output
 
-static_assert(type_name_pp<long int> ==
+static_assert(type_name_pp<const volatile int> ==
+	charz{ GCM("const volatile int"      // GCC
+			  ,"const volatile int"      // Clang
+			  ,"volatile const int") }); // MSVC
+
+static_assert(type_name_pp<long> ==
               charz{GCM(  "long int"  // GCC
                          ,"long"      // Clang
                          ,"long")});  // MSVC
@@ -79,49 +104,70 @@ static_assert(type_name_pp<long int> ==
 static_assert(type_name_pp<std::nullptr_t> ==
               charz{GCM(  "std::nullptr_t"     // GCC
                               ,"nullptr_t"     // Clang
-                              ,"nullptr_t")}); // MSVC
+                              ,"nullptr")});   // MSVC ??
 
 const volatile char abc[1][2][3]{};
 static_assert( type_name_pp<decltype(abc)> ==
                charz{GCM("const volatile char[1][2][3]"     // GCC
                         ,"char const volatile[1][2][3]"     // Clang
-                        ,"const volatile char[1][2][3]")}); // MSVC
+                        ,"volatile const char[1][2][3]")}); // MSVC
 
 // Hello world
 
 namespace Hello { struct World; }
-static_assert( ltl::type_name_pp<Hello::World> == charz{"Hello::World"});
+
+static_assert( ltl::type_name_pp<Hello::World> ==
+	charz{ GCM("Hello::World"             // GCC
+			  ,"Hello::World"             // Clang
+			  ,"struct Hello::World") }); // MSVC
 
 // Non-type template arg tests
+// Non-types with platform-dependent output
 
-// Different Integral types give same output (not good)
-static_assert( auto_name_pp<0>       == charz{"0"});
-static_assert( auto_name_pp<0U>      == charz{"0"});
-static_assert( auto_name_pp<short{}> == charz{"0"});
-static_assert( auto_name_pp<long{}>  == charz{"0"});
 
-static_assert( auto_name_pp<1>        == charz{"1"});
-static_assert( auto_name_pp<1U>       == charz{"1"});
-static_assert( auto_name_pp<short{1}> == charz{"1"});
-static_assert( auto_name_pp<long{1}>  == charz{"1"});
+constexpr auto zero_pp = charz{ GCM("0"    // GCC
+								  , "0"    // Clang
+								  , "0x0"  // MSVC
+) };
+// Different Integral types give the same output (not good)
+static_assert( auto_name_pp<0>       == zero_pp );
+static_assert( auto_name_pp<0U>      == zero_pp );
+static_assert( auto_name_pp<short{}> == zero_pp );
+static_assert( auto_name_pp<long{}>  == zero_pp );
 
-// char c, output as 'c' for printable c
-static_assert( auto_name_pp<'0'> == charz{"'0'"});
-// else escape sequence or value
+constexpr auto one_pp = charz{ GCM("1"    // GCC
+								 , "1"    // Clang
+								 , "0x1"  // MSVC
+) };
+static_assert( auto_name_pp<1>        == one_pp );
+static_assert( auto_name_pp<1U>       == one_pp );
+static_assert( auto_name_pp<short{1}> == one_pp );
+static_assert( auto_name_pp<long{1}>  == one_pp );
+
+
+// Printable char, e.g. '0'
+static_assert( auto_name_pp<'0'> == charz{ GCM("'0'"    // GCC
+	                                          ,"'0'"    // Clang
+	                                          ,"0x30")}); // MSVC
+// Non-printable char, e.g. 0
 static_assert( auto_name_pp<char{}> ==
-charz{GCM (""             // GCC>=9, "'\000'" GCC<9
-         , R"('\x00')"
-         , R"('\x00')")});
+charz{GCM (""          // GCC>=9, "'\000'" GCC<9
+      , R"('\x00')"    // Clang
+         , "0x0")});   // MSVC
 
 constexpr char c{};
-static_assert( auto_name_pp<&c> == charz{GCM("(& c)", "&c", "&c")});
+static_assert( auto_name_pp<&c> == charz{GCM("(& c)"
+	                                       , "&c"
+	                                       , "& c")});
 
-struct ch { char c; };
-static_assert( auto_name_pp<&ch::c> == charz{"&ch::c"});
 
-static_assert( type_name_pp<decltype(&ch::c)> == charz{"char ch::*"});
+static_assert(auto_name_pp<&ch::c> == charz{ GCM("&ch::c"
+										   , "&ch::c"
+										   , "pointer-to-member(0x0)") });
+
 
 // Enums
+// Simple cases are fairly consistent (since GCC9).
 
 enum e { a, b };
 static_assert( auto_name_pp<a> == charz{"a"} );
@@ -138,7 +184,7 @@ static_assert( auto_name_pp<z> == charz{"z"} );
 static_assert( type_name_pp<std::string> ==
 charz{GCM("std::__cxx11::basic_string<char>"
         , "std::__1::basic_string<char>"
-        , "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >")});
+        , "class std::basic_string<char, struct std::char_traits<char>, class std::allocator<char> >")});
 
 int main()
 {
