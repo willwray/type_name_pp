@@ -10,10 +10,10 @@ platform: x64
 environment:
   matrix:
     # Visual Studio 2017
-    - GENERATOR: Visual Studio 15 2017 Win64
+    - GENERATOR: Visual Studio 16 2019 Win64
       STDFLAGS: /std:c++latest
       SCRIPT: support/vs.py
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
 
 install:
   #- git submodule -q update --init
