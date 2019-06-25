@@ -180,28 +180,28 @@ last_qualifier_pos(A const& a)
 // An NTBS constant.
 //
 template <typename T>
-inline constexpr auto const& type_name_pp = impl::PTTI<T>();
+inline constexpr auto type_name_pp = impl::PTTI<T>();
 
 // ltl::auto_name_pp<v>; 'pretty print' output for NTTP value v
 // extracted from preprocessor 'pretty function' output.
 // An NTBS constant.
 //
 template <auto v>
-inline constexpr auto const& auto_name_pp = impl::PTvI<v>();
+inline constexpr auto auto_name_pp = impl::PTvI<v>();
 
 // ltl::type_name_pu<T>; suffix from final "::" in type_name_pp<T>
 //
 template <typename T>
-inline constexpr auto const& type_name_pu = ntbs::cut<
-                   impl::last_qualifier_pos(type_name_pp<T>)>
-                                           (type_name_pp<T>);
+inline constexpr auto type_name_pu = ntbs::cut<
+                      impl::last_qualifier_pos(type_name_pp<T>)>
+                                              (type_name_pp<T>);
 
 // ltl::auto_name_pu<v>; suffix from final "::" in auto_name_pp<T> 
 //
 template <auto v>
-inline constexpr auto const& auto_name_pu = ntbs::cut<
-                   impl::last_qualifier_pos(auto_name_pp<v>)>
-                                           (auto_name_pp<v>);
+inline constexpr auto auto_name_pu = ntbs::cut<
+                      impl::last_qualifier_pos(auto_name_pp<v>)>
+                                              (auto_name_pp<v>);
 
 } // namespace ltl
 
