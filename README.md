@@ -38,54 +38,125 @@ Also at [boost.org](http://www.boost.org/LICENSE_1_0.txt) and accompanying file 
 
 ----
 
-> Requires C++17. Targets GCC, Clang, MSVC.
+> Requires C++17. Targets GCC, Clang, MSVC. Namespace `ltl`.  
+> Depends on [**`ntbs.hpp`**](https://github.com/willwray/ntbs), another `ltl` lib for constexpr C-string splicing.
 
-Two variable templates define null-terminated char arrays for `type` and '`auto`' names:
+Two variable templates, `type_name_pp` and `auto_name_pp`, in namespace `ltl`,  
+define null-terminated char arrays for `type` and '`auto`' template arguments:
 
 ```C++
   ltl::type_name_pp<T>; // 'Pretty print' name for type T.
   ltl::auto_name_pp<v>; // 'Pretty print' output for auto/NTTP value v.
 ```
 
-Optionally, one or two extra integer template arguments specify a subrange [B,E):
-
-```C++
-  ltl::type_name_pp<T,B,E>; // Subarray [B,E) of type_name_pp<T>.
-  ltl::type_name_pp<T,B>;   // Subarray [B,end), removes a prefix.
-```
-
-The [B,E) range indices are signed integers:  
-
->* Positive values index forward from begin index 0 as usual.
->* Negative values index backward from the end of the char array  
-(-1 serves as end index here as all arrays are zero-terminated).
-
 For convenience, `_pu` versions return the string that follows any final "`::`" separator:
+
 ```C++
   ltl::type_name_pu<T>; // type name with leading qualifiers stripped.
   ltl::auto_name_pu<v>; // auto name with leading qualifiers stripped.
 ```
 
+The names are sliced from preprocessor 'pretty function' extensions:
+
+           __FUNCSIG__         on MSVC
+           __PRETTY_FUNCTION__ on GCC, Clang
+
+These are constexpr-usable strings of unspecified format that varies between compilers  
+and between releases of a compiler;
+this method is not backward or forward compatible.  
+It does not provide portable names.
+Test for your use-case and target platforms.
+
+
 ## Usage examples
+
+Simple fundamental type `int`:
+
+```C++
+  puts( ltl::type_name_pp<int> );
+```
+
+Outputs "`int`" (yay).
+
+Namespace-scope `struct` type (here, incomplete):
 
 ```C++
   namespace Hello { struct World; }
   puts( ltl::type_name_pp<Hello::World> );
 ```
 
-Outputs "`Hello::World`"
+Outputs "`Hello::World`" (or maybe "`struct Hello::World`" on MSVC).
 
 Use `decltype(expr)` to query the type of an expression such as a variable:
 
 ```C++
-  const char abc[1][2][3]{};
+  const volatile char abc[1][2][3]{};
   std::cout << type_name_pp<decltype(abc)>;
 ```
 
-Outputs `char const [1][2][3]` or `const char[1][2][3]` (or something similar)
+Outputs:  
+>`"const volatile char[1][2][3]"`     on GCC9  
+>`"char const volatile[1][2][3]"`     on Clang8  
+>`"volatile const char[1][2][3]"`     on MSVC 19.22.xxxxx  
 
+As you can see, the output format varies widely between compilers.
+
+## String splicing
+
+The output may include nested name qualifiers for scoped types and ids.  
+'`type_name_pu`' and '`auto_name_pu`' help to 'unqualify' simple names.  
+Templated types may list their template arguments, recursively...  
+
+For more complex name-string-splicing, the included `ntbs` lib provides  
+function templates `cat(C-strings...)` and  `cut<B,E>(C-string)`
+
+
+Where B,E are signed-integer range indices `[B,E)`:
+
+>* Positive values index forward from begin index 0 as usual.
+>* Negative values index backward from the end of the char array  
+(-1 serves as end index here as all arrays are zero-terminated).
 
 ## Design notes
+
+As noted, 'pretty function' output is very fickle. I've observed that most changes  
+between versions of a compiler affect the start of the output, the 'prefix',  
+while the end of the output, the 'suffix', has stayed relatively stable.  
+The library functions assume a fixed suffix string and adapt to prefix changes  
+by comparing with a call for a known simple type - `int` (or value - `0`).  
+
+For const values only, the returned char array type has an implicit conversion  
+to its contained built-in char array, which itself decays to `const char*`.
+
+The implicit conversion char array has benefits of compatibility with C-style  
+function interfaces that accept `char*` arguments as well as C++ compatibility via  
+`<iterator>` for std algorithms and range-for loops with minimal dependency.
+
+## Build
+
+As a single header there's nothing to build - just remember the `ntbs` dependency.  
+It's simple to incorporate as a git submodule, along with the `ntbs` lib.  
+(the meson build script incorporates `ntbs` as a git submodule subproject).  
+If you copy directly to your project then make sure to keep the copyright and license.
+
+For testing, you should add tests for your own use cases.  
+(The provided 'tests' are more a catalogue of differences in output format.)
+
+### Meson
+
+A Meson build script is provided.  
+It will automatically clone the required `ntbs` lib (with network access).
+
+Example with default ninja backend:
+
+```bash
+meson build
+ninja -C build
+ninja -C build test
+```
+
+On **Windows**, Meson can target various backends including vs2019.  
+An MSI installer for Meson and Ninja is available on the Meson [GitHub release page](https://github.com/mesonbuild/meson/releases).
 
 | Linux Travis| Windows Appveyor|
 | :---: | :---: |

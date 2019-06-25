@@ -37,9 +37,6 @@ using namespace ltl;
 #     define             GCM(gnu,clang,msvc) msvc
 #endif
 
-template <int32_t N> struct charz { char data[N]; };
-template <int32_t N> charz(char const(&)[N]) -> charz<N>;
-
 // constexpr char array vs charz comparison *** SKIPS SPACES ***
 // 
 template <int32_t A, int32_t B>
