@@ -39,15 +39,20 @@ Also at [boost.org](http://www.boost.org/LICENSE_1_0.txt) and accompanying file 
 ----
 
 > Requires C++17. Targets GCC, Clang, MSVC. Namespace `ltl`.  
-> Depends on [**`ntbs.hpp`**](https://github.com/willwray/ntbs), another `ltl` lib for constexpr C-string splicing.
+> Depends on `ltl` lib [**`ntbs.hpp`**](https://github.com/willwray/ntbs) for constexpr C-string slicing.  
+> Uses non-standard, non-portable 'pretty function' compiler extensions.  
+> Tested with recent compilers only.
 
-Two variable templates, `type_name_pp` and `auto_name_pp`, in namespace `ltl`,  
-define null-terminated char arrays for `type` and '`auto`' template arguments:
+Variable templates **`type_name_pp`** and **`auto_name_pp`** are defined in namespace `ltl`,  
+taking `type T` and `auto v` template arguments:
 
 ```C++
   ltl::type_name_pp<T>; // 'Pretty print' name for type T.
   ltl::auto_name_pp<v>; // 'Pretty print' output for auto/NTTP value v.
 ```
+
+The result is a 'constexpr C-string', a null-terminated char array class type that is  
+usable as a generic `char[N]` (including decay-to-pointer, for const values only).
 
 For convenience, `_pu` versions return the string that follows any final "`::`" separator:
 
@@ -58,13 +63,15 @@ For convenience, `_pu` versions return the string that follows any final "`::`" 
 
 The names are sliced from preprocessor 'pretty function' extensions:
 
+```C++
            __FUNCSIG__         on MSVC
            __PRETTY_FUNCTION__ on GCC, Clang
+```
 
-These are constexpr-usable strings of unspecified format that varies between compilers  
+These are constexpr-usable strings of unspecified format that differs between compilers  
 and between releases of a compiler;
 this method is not backward or forward compatible.  
-It does not provide portable names.
+**This library does not provide portable names.**
 Test for your use-case and target platforms.
 
 
@@ -73,19 +80,18 @@ Test for your use-case and target platforms.
 Simple fundamental type `int`:
 
 ```C++
-  puts( ltl::type_name_pp<int> );
+  puts( ltl::type_name_pp<int> ); // Outputs "int"
 ```
 
-Outputs "`int`" (yay).
-
-Namespace-scope `struct` type (here, incomplete):
+Namespace-scope `struct` type (an incomplete struct type here):
 
 ```C++
   namespace Hello { struct World; }
   puts( ltl::type_name_pp<Hello::World> );
+  // Outputs             "Hello::World"    on GCC & Clang
+  // or           "struct Hello::World"    on MSVC
 ```
 
-Outputs "`Hello::World`" (or maybe "`struct Hello::World`" on MSVC).
 
 Use `decltype(expr)` to query the type of an expression such as a variable:
 
@@ -99,7 +105,6 @@ Outputs:
 >`"char const volatile[1][2][3]"`     on Clang8  
 >`"volatile const char[1][2][3]"`     on MSVC 19.22.xxxxx  
 
-As you can see, the output format varies widely between compilers.
 
 ## String splicing
 
@@ -108,10 +113,8 @@ The output may include nested name qualifiers for scoped types and ids.
 Templated types may list their template arguments, recursively...  
 
 For more complex name-string-splicing, the included `ntbs` lib provides  
-function templates `cat(C-strings...)` and  `cut<B,E>(C-string)`
-
-
-Where B,E are signed-integer range indices `[B,E)`:
+function templates `cat(C-strings...)` and  `cut<B,E>(C-string)`  
+where `B,E` are signed-integer indices for the range `[B,E)`:
 
 >* Positive values index forward from begin index 0 as usual.
 >* Negative values index backward from the end of the char array  
@@ -119,44 +122,44 @@ Where B,E are signed-integer range indices `[B,E)`:
 
 ## Design notes
 
-As noted, 'pretty function' output is very fickle. I've observed that most changes  
+As noted, 'pretty function' output is fickle. I've observed that most changes  
 between versions of a compiler affect the start of the output, the 'prefix',  
 while the end of the output, the 'suffix', has stayed relatively stable.  
 The library functions assume a fixed suffix string and adapt to prefix changes  
-by comparing with a call for a known simple type - `int` (or value - `0`).  
+by comparing with a call for type `int` or value `0`.
 
-For const values only, the returned char array type has an implicit conversion  
-to its contained built-in char array, which itself decays to `const char*`.
+The returned char array type has an implicit conversion (for const values only)  
+to its contained built-in char array, which itself decays to `const char*`.  
+This implicit conversion to char array is convenient for compatibility with:
 
-The implicit conversion char array has benefits of compatibility with C-style  
-function interfaces that accept `char*` arguments as well as C++ compatibility via  
-`<iterator>` for std algorithms and range-for loops with minimal dependency.
+* C-style   function interfaces that accept `char*` arguments
+* C++ std algorithms and range-for loops via `<iterator>` interface
 
 ## Build
 
-As a single header there's nothing to build - just remember the `ntbs` dependency.  
-It's simple to incorporate as a git submodule, along with the `ntbs` lib.  
-(the meson build script incorporates `ntbs` as a git submodule subproject).  
-If you copy directly to your project then make sure to keep the copyright and license.
+Be sure to keep the copyright and license with any copy of the library header  
+as well as the GitHub repo link.
 
-For testing, you should add tests for your own use cases.  
-(The provided 'tests' are more a catalogue of differences in output format.)
+As a single header lib there's really nothing to build.  
+The only dependency is the [**`ntbs`**](https://github.com/willwray/ntbs) single-header library.
 
-### Meson
-
-A Meson build script is provided.  
-It will automatically clone the required `ntbs` lib (with network access).
+A simple **Meson** build script is provided which will automatically clone `ntbs`  
+(assuming network access) as a git submodule subproject.
 
 Example with default ninja backend:
 
 ```bash
 meson build
 ninja -C build
-ninja -C build test
 ```
+
+
 
 On **Windows**, Meson can target various backends including vs2019.  
 An MSI installer for Meson and Ninja is available on the Meson [GitHub release page](https://github.com/mesonbuild/meson/releases).
+
+The meson build compiles a test file with static asserts that are likely to fail  
+on any slightly different platform.
 
 | Linux Travis| Windows Appveyor|
 | :---: | :---: |
