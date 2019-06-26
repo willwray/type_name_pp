@@ -38,7 +38,8 @@ Also at [boost.org](http://www.boost.org/LICENSE_1_0.txt) and accompanying file 
 
 ----
 
-> Requires C++17. Targets GCC, Clang, MSVC. Namespace `ltl`.  
+> C++17. Targets GCC, Clang, MSVC.  
+> Namespace `ltl`.  
 > Depends on `ltl` lib [**`ntbs.hpp`**](https://github.com/willwray/ntbs) for constexpr C-string slicing.  
 > Uses non-standard, non-portable 'pretty function' compiler extensions.  
 > Tested with recent compilers only.
@@ -153,8 +154,6 @@ meson build
 ninja -C build
 ```
 
-
-
 On **Windows**, Meson can target various backends including vs2019.  
 An MSI installer for Meson and Ninja is available on the Meson [GitHub release page](https://github.com/mesonbuild/meson/releases).
 
@@ -163,5 +162,5 @@ on any slightly different platform.
 
 | Linux Travis| Windows Appveyor|
 | :---: | :---: |
-|gcc-9, clang-7<br>-std=c++17|MSVC 19.22.27724 x86<br>/std:c++latest|
+|gcc-9, clang-7<br>-std=c++17|MSVC 19.21.27702.2<br>/std:c++latest|
 | [![Build Status](https://travis-ci.org/willwray/type_name_pp.svg?branch=master)](https://travis-ci.org/willwray/type_name_pp) | [![Build status](https://ci.appveyor.com/api/projects/status/i77qtb1de21ew5su?svg=true)](https://ci.appveyor.com/project/willwray/type_name_pp) |

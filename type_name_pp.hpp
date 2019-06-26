@@ -148,7 +148,7 @@ constexpr
 int32_t
 last_qualifier_pos(A const& a)
 {
-    int32_t s{ntbs::extent_v<A>};
+    int32_t s{size(A{})};
     while ( s != 0 && ( a[s-1] != ':' ||
           ( s-1 != 0 && a[s-2] != ':' ) ) )
       --s;
